@@ -38,6 +38,8 @@ This project aims to classify depression states using motor activity data from w
 
 2. **Setup**
    ```bash
+   Download the processed data from: https://drive.google.com/drive/folders/1vqB-VN2OGxNR-XnteJC04S6GRPb9o2mL?usp=sharing
+   Then put the files inside the data/processed_data
    python -m venv .venv
    .venv\Scripts\activate # On Mac: source venv/bin/activate
    pip install -r requirements.txt
