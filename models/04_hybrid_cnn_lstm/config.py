@@ -1,128 +1,88 @@
 # models/04_hybrid_cnn_lstm/config.py
 """
-Advanced Configuration for Hybrid CNN-LSTM Model
-Team Member: You can experiment with these hyperparameters
+Memory-Optimized Configuration for Hybrid CNN-LSTM Model
 """
 
 # ===== MODEL ARCHITECTURE CONFIGURATION =====
 MODEL_CONFIG = {
-    # CNN Configuration
-    'conv_filters': [64, 128, 256],      # Number of filters in each conv layer
-    'kernel_sizes': [7, 5, 3],           # Kernel sizes for conv layers
-    'use_multi_scale': True,             # Use multi-scale CNN approach
+    # CNN Configuration - Reduced sizes for memory efficiency
+    'conv_filters': [32, 64, 128],      # REDUCED: Was [64, 128, 256]
+    'kernel_sizes': [5, 3, 3],          # Smaller kernels
+    'use_multi_scale': False,           # Disabled to save memory
     
-    # LSTM Configuration  
-    'lstm_units': [128, 64],             # Units in each LSTM layer
-    'use_bidirectional': False,          # Set to True for BiLSTM instead of LSTM
+    # LSTM Configuration - Reduced units
+    'lstm_units': [64, 32],             # REDUCED: Was [128, 64]
     
-    # Dense Layers Configuration
-    'dense_units': [512, 256, 128],      # Units in dense layers
-    'activation': 'relu',                # Activation function
+    # Dense Layers Configuration - Reduced units
+    'dense_units': [128, 64, 32],       # REDUCED: Was [512, 256, 128]
+    'activation': 'relu',
     
-    # Regularization - ADD THE MISSING KEY
-    'dropout_rates': [0.2, 0.2, 0.3, 0.3, 0.5, 0.5, 0.3],
-    'l2_reg': 0.001,                     # ADD THIS LINE - L2 regularization strength
-    'use_batch_norm': True,              # Use batch normalization
+    # Regularization
+    'dropout_rates': [0.2, 0.2, 0.3, 0.3, 0.4, 0.4],
+    'l2_reg': 0.001,
+    'use_batch_norm': True,
     
     # Feature Fusion
-    'fusion_method': 'concatenate',      # 'concatenate' or 'add'
-    'use_attention': False,              # Experimental: Use attention mechanism
+    'fusion_method': 'concatenate',
+    'use_attention': False,
 }
 
 # ===== TRAINING CONFIGURATION =====
 TRAINING_CONFIG = {
-    'batch_size': 32,                    # Training batch size
-    'epochs': 150,                       # Maximum training epochs
-    'learning_rate': 0.001,              # Initial learning rate
-    'learning_rate_schedule': True,      # Use learning rate scheduling
+    'batch_size': 16,                   # REDUCED: Was 32 (HALVED for memory)
+    'epochs': 100,                      # Reduced epochs
+    'learning_rate': 0.001,
+    'learning_rate_schedule': True,
     
     # Early Stopping
     'early_stopping': True,
-    'early_stopping_patience': 20,
+    'early_stopping_patience': 15,
     'early_stopping_monitor': 'val_loss',
     'restore_best_weights': True,
     
     # Learning Rate Reduction
     'reduce_lr': True,
-    'reduce_lr_patience': 10,
+    'reduce_lr_patience': 8,
     'reduce_lr_factor': 0.5,
     'reduce_lr_min': 1e-7,
     
     # Class weights for imbalance
     'use_class_weights': True,
     
-    # Gradient Clipping (for stability)
-    'gradient_clip': True,
-    'clip_value': 1.0,
+    # Gradient Clipping
+    'gradient_clip': False,             # Disabled for stability
     
-    # Evaluation metrics - ADD THIS SECTION
+    # Evaluation metrics
     'evaluation_config': {
-        'metrics': ['accuracy', 'precision', 'recall', 'auc']
+        'metrics': ['accuracy']         # Simplified to just accuracy
     },
     
     # Model saving
     'save_model_architecture': True,
-    'use_tensorboard': False,  # Set to False to avoid TensorBoard issues
+    'use_tensorboard': False,
 }
 
 # ===== MODEL SELECTION =====
 MODEL_SELECTION = {
-    'model_type': 'advanced_parallel',   # 'advanced_parallel' or 'sequential'
+    'model_type': 'sequential',         # CHANGED: Use sequential (less memory)
     'use_pretrained': False,
 }
 
 # ===== EVALUATION CONFIGURATION =====
 EVALUATION_CONFIG = {
     'save_plots': True,
-    'plot_dpi': 300,
+    'plot_dpi': 200,                    # Lower DPI to save memory
     'generate_report': True,
     'save_predictions': True,
     'confidence_threshold': 0.5,
-    
-    # Metrics to track
-    'metrics': ['accuracy', 'precision', 'recall', 'auc'],
-    
-    # Cross-validation (optional)
-    'use_cross_validation': False,
-    'cv_folds': 5,
+    'metrics': ['accuracy'],
 }
 
 # ===== PATHS AND FILES =====
 PATH_CONFIG = {
     'data_path': '../../data/processed_data/',
     'results_path': '../../results/model_performance/',
-    'model_save_path': 'best_hybrid_model.h5',
+    'model_save_path': 'best_hybrid_model.weights.h5', 
     'log_dir': 'training_logs/',
     'checkpoint_dir': 'checkpoints/',
-}
-
-# ===== ADVANCED FEATURES =====
-ADVANCED_CONFIG = {
-    # Data augmentation for time series
-    'use_data_augmentation': False,
-    'augmentation_methods': ['time_warp', 'noise_injection'],
-    
-    # Ensemble learning (optional)
-    'use_ensemble': False,
-    'ensemble_models': 3,
-    
-    # Transfer learning (if applicable)
-    'use_transfer_learning': False,
-    'pretrained_path': None,
-    
-    # Hyperparameter tuning
-    'tune_hyperparameters': False,
-    'tuning_method': 'bayesian',  # 'grid', 'random', 'bayesian'
-}
-
-# ===== EXPERIMENT TRACKING =====
-EXPERIMENT_CONFIG = {
-    'experiment_name': 'Hybrid_CNN_LSTM_Depression_Detection',
-    'track_experiment': True,
-    'use_tensorboard': False,  # Disabled to avoid issues
-    'save_model_architecture': True,
-    
-    # Model versioning
-    'version': '1.0.0',
-    'description': 'Advanced Hybrid CNN-LSTM for depression classification',
 }
