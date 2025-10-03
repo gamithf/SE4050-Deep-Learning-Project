@@ -1,0 +1,65 @@
+# Data files
+data/raw/
+*.npy
+*.npz
+*.joblib
+*.pkl
+*.h5
+*.hdf5
+
+# Model files
+models/*/best_model.h5
+models/*/checkpoints/
+
+# Results
+results/model_performance/*.png
+results/model_performance/*.json
+results/model_performance/*.npy
+results/comparisons/*.png
+results/comparisons/*.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/

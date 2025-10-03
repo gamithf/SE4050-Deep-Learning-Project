@@ -1,0 +1,79 @@
+{
+  "preprocessing_info": {
+    "timestamp": "2025-10-03T00:07:33.917042",
+    "sequence_length": 1440,
+    "step_size": 360,
+    "feature_names": [
+      "activity",
+      "hour",
+      "day_of_week",
+      "is_weekend",
+      "time_of_day_encoded",
+      "age",
+      "edu",
+      "days",
+      "has_melanch",
+      "is_inpatient",
+      "is_married",
+      "is_working",
+      "afftype_bipolar1",
+      "afftype_bipolar2",
+      "afftype_unipolar",
+      "gender_2"
+    ],
+    "n_temporal_features": 5,
+    "n_static_features": 11,
+    "use_metadata": true
+  },
+  "dataset_shapes": {
+    "X_train": [
+      2502,
+      1440,
+      16
+    ],
+    "X_val": [
+      834,
+      1440,
+      16
+    ],
+    "X_test": [
+      835,
+      1440,
+      16
+    ],
+    "y_train": [
+      2502
+    ],
+    "y_val": [
+      834
+    ],
+    "y_test": [
+      835
+    ]
+  },
+  "class_distribution": {
+    "train": [
+      1632,
+      870
+    ],
+    "val": [
+      544,
+      290
+    ],
+    "test": [
+      545,
+      290
+    ]
+  },
+  "data_quality": {
+    "nans_in_X_train": 0,
+    "nans_in_X_val": 0,
+    "nans_in_X_test": 0,
+    "X_train_range": [
+      -3.140897512435913,
+      21.63668441772461
+    ],
+    "X_train_mean": 9.497356234788867e-10,
+    "X_train_std": 0.9999995827674866
+  }
+}
