@@ -1,3 +1,4 @@
+# models/04_hybrid_cnn_lstm/train.py
 import sys
 import os
 import tensorflow as tf
@@ -9,11 +10,17 @@ from datetime import datetime
 sys.path.append('../../')
 sys.path.append('../')
 
-from utils.data_loader import DataLoader
-from utils.common import create_callbacks, setup_gpu
-from utils.metrics import ModelEvaluator
-from model import create_hybrid_model, create_sequential_hybrid_model, compile_model
-from config import MODEL_CONFIG, TRAINING_CONFIG, PATH_CONFIG, MODEL_SELECTION
+# Import with error handling
+try:
+    from utils.data_loader import DataLoader
+    from utils.common import setup_gpu
+    from utils.metrics import ModelEvaluator
+    from model import create_hybrid_model, create_sequential_hybrid_model, compile_model
+    from config import MODEL_CONFIG, TRAINING_CONFIG, PATH_CONFIG, MODEL_SELECTION
+except ImportError as e:
+    print(f"❌ Import error: {e}")
+    print("💡 Make sure you have the required files in the correct locations")
+    sys.exit(1)
 
 class HybridModelTrainer:
     def __init__(self):
@@ -29,25 +36,29 @@ class HybridModelTrainer:
         # Setup GPU
         setup_gpu()
         
-        # Create directories
-        os.makedirs(PATH_CONFIG['log_dir'], exist_ok=True)
-        os.makedirs(PATH_CONFIG['checkpoint_dir'], exist_ok=True)
-        os.makedirs(PATH_CONFIG['results_path'], exist_ok=True)
-        
-        print("✅ Environment setup complete!")
+        # Create directories with error handling
+        try:
+            os.makedirs(PATH_CONFIG.get('log_dir', 'training_logs'), exist_ok=True)
+            os.makedirs(PATH_CONFIG.get('checkpoint_dir', 'checkpoints'), exist_ok=True)
+            os.makedirs(PATH_CONFIG.get('results_path', '../../results/model_performance'), exist_ok=True)
+            print("✅ Environment setup complete!")
+        except Exception as e:
+            print(f"❌ Directory creation failed: {e}")
+            raise
         
     def load_and_prepare_data(self):
         """Load and prepare data for training"""
         print("📊 Loading and preparing data...")
         
-        self.data_loader = DataLoader(data_path=PATH_CONFIG['data_path'])
+        data_path = PATH_CONFIG.get('data_path', '../../data/processed_data/')
+        self.data_loader = DataLoader(data_path=data_path)
         self.data_loader.load_data()
         
         data_shapes = self.data_loader.get_data_shapes()
         print(f"Data shapes: {data_shapes}")
         
         # Compute class weights for imbalance
-        if TRAINING_CONFIG['use_class_weights']:
+        if TRAINING_CONFIG.get('use_class_weights', True):
             class_weights = self.data_loader.get_class_weights()
             print(f"Class weights: {class_weights}")
         else:
@@ -59,7 +70,9 @@ class HybridModelTrainer:
         """Create the hybrid model based on configuration"""
         print("🧠 Creating Hybrid CNN-LSTM Model...")
         
-        if MODEL_SELECTION['model_type'] == 'advanced_parallel':
+        model_type = MODEL_SELECTION.get('model_type', 'advanced_parallel')
+        
+        if model_type == 'advanced_parallel':
             print("Using Advanced Parallel Hybrid Architecture")
             self.model = create_hybrid_model(
                 input_shape=input_shape,
@@ -74,66 +87,62 @@ class HybridModelTrainer:
                 config=MODEL_CONFIG
             )
         
+        # Get metrics safely
+        eval_config = TRAINING_CONFIG.get('evaluation_config', {})
+        metrics = eval_config.get('metrics', ['accuracy'])
+        
         # Compile model
+        learning_rate = TRAINING_CONFIG.get('learning_rate', 0.001)
         self.model = compile_model(
             self.model,
-            learning_rate=TRAINING_CONFIG['learning_rate'],
-            metrics=TRAINING_CONFIG['evaluation_config']['metrics'] if 'evaluation_config' in TRAINING_CONFIG else None
+            learning_rate=learning_rate,
+            metrics=metrics
         )
         
         return self.model
     
-    def create_advanced_callbacks(self):
-        """Create advanced callbacks for training"""
-        print("⚙️ Creating advanced callbacks...")
+    def create_callbacks(self):
+        """Create training callbacks"""
+        print("⚙️ Creating training callbacks...")
         
         callbacks = []
         
         # Early Stopping
-        if TRAINING_CONFIG['early_stopping']:
+        if TRAINING_CONFIG.get('early_stopping', True):
             early_stopping = tf.keras.callbacks.EarlyStopping(
-                monitor=TRAINING_CONFIG['early_stopping_monitor'],
-                patience=TRAINING_CONFIG['early_stopping_patience'],
-                restore_best_weights=TRAINING_CONFIG['restore_best_weights'],
+                monitor=TRAINING_CONFIG.get('early_stopping_monitor', 'val_loss'),
+                patience=TRAINING_CONFIG.get('early_stopping_patience', 20),
+                restore_best_weights=TRAINING_CONFIG.get('restore_best_weights', True),
                 verbose=1
             )
             callbacks.append(early_stopping)
         
         # Learning Rate Scheduler
-        if TRAINING_CONFIG['reduce_lr']:
+        if TRAINING_CONFIG.get('reduce_lr', True):
             reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
-                monitor=TRAINING_CONFIG['early_stopping_monitor'],
-                factor=TRAINING_CONFIG['reduce_lr_factor'],
-                patience=TRAINING_CONFIG['reduce_lr_patience'],
-                min_lr=TRAINING_CONFIG['reduce_lr_min'],
+                monitor=TRAINING_CONFIG.get('early_stopping_monitor', 'val_loss'),
+                factor=TRAINING_CONFIG.get('reduce_lr_factor', 0.5),
+                patience=TRAINING_CONFIG.get('reduce_lr_patience', 10),
+                min_lr=TRAINING_CONFIG.get('reduce_lr_min', 1e-7),
                 verbose=1
             )
             callbacks.append(reduce_lr)
         
         # Model Checkpoint
+        model_save_path = PATH_CONFIG.get('model_save_path', 'best_hybrid_model.h5')
         checkpoint = tf.keras.callbacks.ModelCheckpoint(
-            PATH_CONFIG['model_save_path'],
-            monitor=TRAINING_CONFIG['early_stopping_monitor'],
+            model_save_path,
+            monitor=TRAINING_CONFIG.get('early_stopping_monitor', 'val_loss'),
             save_best_only=True,
             save_weights_only=False,
             verbose=1
         )
         callbacks.append(checkpoint)
         
-        # TensorBoard (optional)
-        if TRAINING_CONFIG.get('use_tensorboard', False):
-            log_dir = f"{PATH_CONFIG['log_dir']}/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-            tensorboard = tf.keras.callbacks.TensorBoard(
-                log_dir=log_dir,
-                histogram_freq=1,
-                write_graph=True,
-                write_images=True
-            )
-            callbacks.append(tensorboard)
-        
-        # Custom CSV Logger
+        # CSV Logger
+        log_dir = PATH_CONFIG.get('log_dir', 'training_logs')
         csv_logger = tf.keras.callbacks.CSVLogger(
-            f"{PATH_CONFIG['log_dir']}/training_log.csv"
+            f"{log_dir}/training_log.csv"
         )
         callbacks.append(csv_logger)
         
@@ -144,14 +153,18 @@ class HybridModelTrainer:
         """Train the hybrid model"""
         print("🎯 Starting Model Training...")
         
-        callbacks = self.create_advanced_callbacks()
+        callbacks = self.create_callbacks()
+        
+        # Get training parameters with defaults
+        batch_size = TRAINING_CONFIG.get('batch_size', 32)
+        epochs = TRAINING_CONFIG.get('epochs', 100)
         
         # Start training
         self.history = self.model.fit(
             self.data_loader.X_train,
             self.data_loader.y_train,
-            batch_size=TRAINING_CONFIG['batch_size'],
-            epochs=TRAINING_CONFIG['epochs'],
+            batch_size=batch_size,
+            epochs=epochs,
             validation_data=(
                 self.data_loader.X_val, 
                 self.data_loader.y_val
@@ -169,10 +182,11 @@ class HybridModelTrainer:
         """Comprehensive model evaluation"""
         print("📈 Evaluating Model Performance...")
         
-        # Load best model
-        if os.path.exists(PATH_CONFIG['model_save_path']):
+        # Load best model if available
+        model_save_path = PATH_CONFIG.get('model_save_path', 'best_hybrid_model.h5')
+        if os.path.exists(model_save_path):
             print("📥 Loading best saved model...")
-            self.model = tf.keras.models.load_model(PATH_CONFIG['model_save_path'])
+            self.model = tf.keras.models.load_model(model_save_path)
         
         # Make predictions
         y_pred_proba = self.model.predict(self.data_loader.X_test)
@@ -180,7 +194,8 @@ class HybridModelTrainer:
         
         # Evaluate
         evaluator = ModelEvaluator(self.model_name)
-        evaluator.set_history(self.history)
+        if self.history:
+            evaluator.set_history(self.history)
         evaluator.set_predictions(
             self.data_loader.y_test, 
             y_pred, 
@@ -191,7 +206,7 @@ class HybridModelTrainer:
         report, cm = evaluator.generate_classification_report()
         
         # Save detailed results
-        results_dir = PATH_CONFIG['results_path']
+        results_dir = PATH_CONFIG.get('results_path', '../../results/model_performance')
         os.makedirs(results_dir, exist_ok=True)
         
         # Plot results
@@ -241,22 +256,14 @@ class HybridModelTrainer:
             'model_config': MODEL_CONFIG,
             'path_config': PATH_CONFIG,
             'training_timestamp': datetime.now().isoformat(),
-            'git_hash': self._get_git_hash(),
             'environment_info': self._get_environment_info()
         }
         
-        with open(f"{PATH_CONFIG['results_path']}/training_artifacts.json", 'w') as f:
+        results_path = PATH_CONFIG.get('results_path', '../../results/model_performance')
+        with open(f"{results_path}/training_artifacts.json", 'w') as f:
             json.dump(artifacts, f, indent=2)
         
         print("✅ Training artifacts saved!")
-    
-    def _get_git_hash(self):
-        """Get current git hash for reproducibility"""
-        try:
-            import subprocess
-            return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
-        except:
-            return "Unknown"
     
     def _get_environment_info(self):
         """Get environment information"""
@@ -300,7 +307,8 @@ def main():
         trainer.save_training_artifacts()
         
         print("\n🎊 HYBRID CNN-LSTM TRAINING COMPLETED SUCCESSFULLY!")
-        print("📁 Results saved in:", PATH_CONFIG['results_path'])
+        results_path = PATH_CONFIG.get('results_path', '../../results/model_performance')
+        print("📁 Results saved in:", results_path)
         
         return trainer.model, trainer.history, report
         
@@ -308,7 +316,7 @@ def main():
         print(f"❌ Training failed: {str(e)}")
         import traceback
         traceback.print_exc()
-        raise e
+        return None, None, None
 
 if __name__ == "__main__":
     model, history, report = main()

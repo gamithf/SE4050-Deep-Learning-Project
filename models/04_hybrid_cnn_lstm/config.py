@@ -1,3 +1,4 @@
+# models/04_hybrid_cnn_lstm/config.py
 """
 Advanced Configuration for Hybrid CNN-LSTM Model
 Team Member: You can experiment with these hyperparameters
@@ -18,9 +19,9 @@ MODEL_CONFIG = {
     'dense_units': [512, 256, 128],      # Units in dense layers
     'activation': 'relu',                # Activation function
     
-    # Regularization
+    # Regularization - ADD THE MISSING KEY
     'dropout_rates': [0.2, 0.2, 0.3, 0.3, 0.5, 0.5, 0.3],
-    'l2_regularization': 0.001,          # L2 regularization strength
+    'l2_reg': 0.001,                     # ADD THIS LINE - L2 regularization strength
     'use_batch_norm': True,              # Use batch normalization
     
     # Feature Fusion
@@ -53,6 +54,15 @@ TRAINING_CONFIG = {
     # Gradient Clipping (for stability)
     'gradient_clip': True,
     'clip_value': 1.0,
+    
+    # Evaluation metrics - ADD THIS SECTION
+    'evaluation_config': {
+        'metrics': ['accuracy', 'precision', 'recall', 'auc']
+    },
+    
+    # Model saving
+    'save_model_architecture': True,
+    'use_tensorboard': False,  # Set to False to avoid TensorBoard issues
 }
 
 # ===== MODEL SELECTION =====
@@ -109,7 +119,7 @@ ADVANCED_CONFIG = {
 EXPERIMENT_CONFIG = {
     'experiment_name': 'Hybrid_CNN_LSTM_Depression_Detection',
     'track_experiment': True,
-    'use_tensorboard': True,
+    'use_tensorboard': False,  # Disabled to avoid issues
     'save_model_architecture': True,
     
     # Model versioning
